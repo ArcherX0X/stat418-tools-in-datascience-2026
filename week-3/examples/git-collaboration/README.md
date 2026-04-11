@@ -1,6 +1,6 @@
-# Git Collaboration: Advanced Workflows
+# GitHub Collaboration: Professional Workflows
 
-This example demonstrates professional Git workflows for team collaboration.
+This example demonstrates professional GitHub workflows for team collaboration, emphasizing the platform features that make modern data science development efficient.
 
 ## Setup
 
@@ -13,11 +13,19 @@ cd week-3/examples/git-collaboration
 ## Overview
 
 You'll learn:
-- Creating and managing branches
-- Collaborating with pull requests
-- Keeping forks synchronized
-- Working with remote repositories
-- Git best practices for teams
+- GitHub-specific collaboration features
+- Pull requests and code review workflows
+- GitHub Issues for project management
+- GitHub Actions basics
+- Forking and contributing to open source
+- Building a data science portfolio on GitHub
+
+## Template Repository
+
+For a complete example of these concepts in action, see the **LA Crime Analysis** template:
+- GitHub: https://github.com/[instructor-username]/la-crime-analysis
+- Demonstrates: Pull requests, Issues, Actions, professional documentation
+- Students: Fork this for your final projects
 
 ## Example 1: Feature Branch Workflow
 
@@ -90,14 +98,28 @@ git push origin feature/data-visualization
 git push --set-upstream origin feature/data-visualization
 ```
 
-**5. Create a Pull Request:**
-- Go to GitHub repository
-- Click "Compare & pull request" button
-- Fill in PR description:
-  - What does this PR do?
-  - Why is this change needed?
-  - How was it tested?
-- Request reviewers
+**5. Create a Pull Request on GitHub:**
+- Go to your GitHub repository
+- Click "Compare & pull request" button (appears after pushing)
+- Fill in PR description using template:
+  ```markdown
+  ## What does this PR do?
+  Adds scatter plot visualization function for data analysis
+  
+  ## Why is this change needed?
+  Team needs to visualize relationships between variables
+  
+  ## How was it tested?
+  - Unit tests added for edge cases
+  - Manual testing with sample data
+  - Verified plot output quality
+  
+  ## Screenshots
+  [Attach example plot if applicable]
+  ```
+- Add labels (e.g., `enhancement`, `data-viz`)
+- Link related Issues (e.g., "Closes #42")
+- Request reviewers from your team
 - Submit PR
 
 **6. Address Review Feedback:**
@@ -505,9 +527,71 @@ git checkout feature/my-work
 4. **Keep your fork updated** by fetching from upstream
 5. **Review a classmate's PR** and leave constructive feedback
 
+## GitHub-Specific Features
+
+### GitHub Issues
+
+**Create an Issue:**
+```markdown
+Title: Add data preprocessing pipeline
+
+Description:
+We need a preprocessing pipeline that:
+- Handles missing values
+- Normalizes numeric features
+- Encodes categorical variables
+
+Acceptance Criteria:
+- [ ] Function handles all data types
+- [ ] Unit tests cover edge cases
+- [ ] Documentation includes examples
+
+Labels: enhancement, data-processing
+Assignee: @username
+```
+
+**Link Issues to PRs:**
+```bash
+# In PR description or commit message
+git commit -m "Add preprocessing pipeline
+
+Closes #42
+Relates to #38"
+```
+
+### GitHub Actions (CI/CD)
+
+**Basic workflow example** (`.github/workflows/test.yml`):
+```yaml
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: pytest
+```
+
+See the LA Crime Analysis template for complete CI/CD examples.
+
+### GitHub Projects
+
+**Organize work:**
+- Create project board
+- Add Issues as cards
+- Track progress: To Do → In Progress → Done
+- Link PRs to Issues automatically
+
 ## Resources
 
+- [GitHub Skills](https://skills.github.com/) - Interactive tutorials
+- [GitHub Docs](https://docs.github.com/)
 - [GitHub Flow Guide](https://guides.github.com/introduction/flow/)
-- [Atlassian Git Workflows](https://www.atlassian.com/git/tutorials/comparing-workflows)
-- [Pro Git Book - Branching](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Pull Request Best Practices](https://github.blog/2015-01-21-how-to-write-the-perfect-pull-request/)
+- [LA Crime Analysis Template](https://github.com/[instructor-username]/la-crime-analysis) - Complete example

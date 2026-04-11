@@ -1,6 +1,6 @@
-# Podman Basics: Introduction to Containerization
+# Podman Basics: Containerization for Data Science
 
-This example introduces containerization using Podman, a Docker alternative that doesn't require a daemon.
+This example introduces containerization using Podman, focusing on data science workflows and reproducible environments.
 
 ## Setup
 
@@ -27,11 +27,19 @@ podman --version
 ## Overview
 
 You'll learn:
-- What containers are and why they matter
+- What containers are and why they matter for data science
 - Basic Podman commands
 - Running pre-built containers
 - Managing containers and images
 - Volume mounting for data access
+- Building reproducible data science environments
+
+## Template Repository
+
+For a complete containerized data science project, see the **LA Crime Analysis** template:
+- GitHub: https://github.com/[instructor-username]/la-crime-analysis
+- Features: Multi-stage Dockerfiles, docker-compose, development containers
+- Demonstrates: Complete workflow from data fetching to model serving
 
 ## What is a Container?
 
@@ -577,9 +585,49 @@ podman run python:3.11-slim
 4. **View logs** from a running container
 5. **Execute commands** in a running container
 
+## Data Science Container Patterns
+
+### Pattern 1: Jupyter Notebook Container
+
+```bash
+# Run Jupyter in container with data access
+podman run -p 8888:8888 \
+  -v $(pwd)/notebooks:/home/jovyan/work \
+  -v $(pwd)/data:/home/jovyan/data:ro \
+  jupyter/scipy-notebook:latest
+```
+
+### Pattern 2: Model Training Container
+
+```bash
+# Train model with GPU support (if available)
+podman run --device nvidia.com/gpu=all \
+  -v $(pwd)/data:/data:ro \
+  -v $(pwd)/models:/models \
+  -v $(pwd)/train.py:/app/train.py:ro \
+  tensorflow/tensorflow:latest-gpu \
+  python /app/train.py
+```
+
+### Pattern 3: API Serving Container
+
+```bash
+# Serve model via API
+podman run -p 8000:8000 \
+  -v $(pwd)/models:/models:ro \
+  -v $(pwd)/api.py:/app/api.py:ro \
+  -e MODEL_PATH=/models/best_model.pkl \
+  python:3.11-slim \
+  sh -c "pip install fastapi uvicorn scikit-learn && \
+         uvicorn api:app --host 0.0.0.0 --port 8000"
+```
+
+See the LA Crime Analysis template for complete examples of these patterns.
+
 ## Resources
 
 - [Podman Documentation](https://docs.podman.io/)
 - [Podman Tutorial](https://github.com/containers/podman/blob/main/docs/tutorials/podman_tutorial.md)
 - [Podman vs Docker](https://docs.podman.io/en/latest/markdown/podman.1.html)
 - [Container Best Practices](https://developers.redhat.com/blog/2016/02/24/10-things-to-avoid-in-docker-containers)
+- [LA Crime Analysis Template](https://github.com/[instructor-username]/la-crime-analysis) - Complete containerized project
