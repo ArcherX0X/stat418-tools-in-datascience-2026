@@ -262,7 +262,7 @@ TMDB_API_KEY=your_tmdb_api_key_here
    ```
 
 7. **Create a pull request:**
-   - Base: `main`
+   - Base: `assignment-2`
    - Compare: `hw2-yourname`
    - Title: "Homework 2 - Your Name"
    - Description: Brief summary of your findings
