@@ -18,19 +18,19 @@ logger = logging.getLogger(__name__)
 
 def load_raw_data(
     tmdb_path: str = "data/raw/tmdb/movies.json",
-    imdb_path: str = "data/raw/imdb/ratings.json",
+    letterboxd_path: str = "data/raw/letterboxd/ratings.json",
 ) -> Tuple[List[Dict], List[Dict]]:
     with open(tmdb_path) as f:
         tmdb_data = json.load(f)
-    with open(imdb_path) as f:
-        imdb_data = json.load(f)
-    logger.info("Loaded %d TMDB and %d IMDb records", len(tmdb_data), len(imdb_data))
-    return tmdb_data, imdb_data
+    with open(letterboxd_path) as f:
+        letterboxd_data = json.load(f)
+    logger.info("Loaded %d TMDB and %d Letterboxd records", len(tmdb_data), len(letterboxd_data))
+    return tmdb_data, letterboxd_data
 
 
-def merge_data(tmdb_data: List[Dict], imdb_data: List[Dict]) -> pd.DataFrame:
+def merge_data(tmdb_data: List[Dict], letterboxd_data: List[Dict]) -> pd.DataFrame:
     tmdb_df = pd.DataFrame(tmdb_data)
-    imdb_df = pd.DataFrame(imdb_data)
+    lb_df = pd.DataFrame(letterboxd_data)
 
     # Flatten list columns
     tmdb_df["genres"] = tmdb_df["genres"].apply(
@@ -46,7 +46,17 @@ def merge_data(tmdb_data: List[Dict], imdb_data: List[Dict]) -> pd.DataFrame:
         lambda x: ", ".join(m["name"] for m in x) if isinstance(x, list) else ""
     )
 
-    merged = tmdb_df.merge(imdb_df, on="imdb_id", how="left")
+    # Derive year from release_date for merge key
+    tmdb_df["release_year"] = pd.to_datetime(tmdb_df["release_date"], errors="coerce").dt.year
+    lb_df = lb_df.rename(columns={"year": "release_year"})
+
+    # Merge on title + year
+    merged = tmdb_df.merge(
+        lb_df[["title", "release_year", "letterboxd_rating", "letterboxd_fans",
+               "scraped_successfully", "url"]],
+        on=["title", "release_year"],
+        how="left",
+    )
     logger.info("Merged dataframe: %d rows, %d columns", *merged.shape)
     return merged
 
@@ -56,60 +66,54 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     # Standardise dates
     df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
-    df["release_year"] = df["release_date"].dt.year
 
     # Numeric coercion
     for col in ["runtime", "budget", "revenue", "tmdb_rating", "tmdb_vote_count",
-                "imdb_rating", "imdb_votes", "metascore"]:
+                "letterboxd_rating", "letterboxd_fans"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # Nullify zero budgets/revenues (TMDB uses 0 for unknown)
+    # Nullify zero budgets/revenues (TMDB stores 0 for unknown)
     df.loc[df["budget"] == 0, "budget"] = None
     df.loc[df["revenue"] == 0, "revenue"] = None
 
-    # Profit column (only when both are available)
+    # Profit column
     mask = df["budget"].notna() & df["revenue"].notna()
     df["profit"] = None
     df.loc[mask, "profit"] = df.loc[mask, "revenue"] - df.loc[mask, "budget"]
 
-    # Drop exact duplicates
+    # Normalise Letterboxd rating to 0-10 for direct comparison with TMDB
+    df["letterboxd_rating_10"] = df["letterboxd_rating"] * 2
+
+    # Drop exact duplicates and rows with no title
     before = len(df)
     df = df.drop_duplicates(subset=["tmdb_id"])
-    logger.info("Removed %d duplicate rows", before - len(df))
-
-    # Drop rows with no title
     df = df.dropna(subset=["title"])
+    logger.info("Removed %d duplicate rows; final: %d", before - len(df), len(df))
 
-    logger.info("Clean dataframe: %d rows", len(df))
     return df.reset_index(drop=True)
 
 
 def save_processed_data(df: pd.DataFrame, output_dir: str = "data/processed") -> None:
     os.makedirs(output_dir, exist_ok=True)
-
     csv_path = os.path.join(output_dir, "movies.csv")
     json_path = os.path.join(output_dir, "movies.json")
-
     df.to_csv(csv_path, index=False)
     df.to_json(json_path, orient="records", indent=2, date_format="iso")
-
-    logger.info("Saved processed data to %s and %s", csv_path, json_path)
+    logger.info("Saved to %s and %s", csv_path, json_path)
     print(f"Saved {len(df)} records to {csv_path}")
 
 
 def main() -> pd.DataFrame:
     os.makedirs("logs", exist_ok=True)
-    tmdb_data, imdb_data = load_raw_data()
-    df = merge_data(tmdb_data, imdb_data)
+    tmdb_data, letterboxd_data = load_raw_data()
+    df = merge_data(tmdb_data, letterboxd_data)
     df = clean_data(df)
     save_processed_data(df)
 
     print("\nDataset overview:")
     print(f"  Rows: {len(df)}")
-    print(f"  Columns: {list(df.columns)}")
-    print(f"  IMDb ratings available: {df['imdb_rating'].notna().sum()}")
-    print(f"  Metascores available:   {df['metascore'].notna().sum()}")
-    print(f"  Budget/revenue known:   {df['profit'].notna().sum()}")
+    print(f"  Letterboxd ratings available: {df['letterboxd_rating'].notna().sum()}")
+    print(f"  Budget/revenue known:         {df['profit'].notna().sum()}")
     return df
 
 

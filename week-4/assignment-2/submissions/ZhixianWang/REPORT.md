@@ -10,16 +10,15 @@
 | Stage | Records | Notes |
 |-------|---------|-------|
 | TMDB API | 50 movies | Popular movies endpoint, pages 1–3 |
-| OMDb API (IMDb ratings) | 50 queries | 39 returned ratings; 11 unreleased/too new |
-| Merged & cleaned | 50 rows, 21 columns | No duplicates; zero budgets nullified |
+| Letterboxd (scraping) | 50 pages scraped | 49 returned ratings; 1 not found |
+| Merged & cleaned | 50 rows, 22 columns | No duplicates; zero budgets nullified |
 
 **Fields collected per movie:**  
-`tmdb_id`, `imdb_id`, `title`, `release_date`, `runtime`, `genres`, `budget`, `revenue`, `tmdb_rating`, `tmdb_vote_count`, `production_companies`, `original_language`, `cast` (top 5), `crew` (top 5), `imdb_rating`, `imdb_votes`, `metascore`, `release_year`, `profit`
+`tmdb_id`, `imdb_id`, `title`, `release_date`, `runtime`, `genres`, `budget`, `revenue`, `tmdb_rating`, `tmdb_vote_count`, `production_companies`, `original_language`, `cast` (top 5), `crew` (top 5), `letterboxd_rating`, `letterboxd_fans`, `release_year`, `profit`
 
 **Data availability:**
-- IMDb ratings: 39 / 50 (78%)
-- Metascores: 34 / 50 (68%)
-- Budget + revenue: 29 / 50 (58%)
+- Letterboxd ratings: 38 / 50 (76%)
+- Budget + revenue: 23 / 50 (46%)
 
 ---
 
@@ -29,9 +28,9 @@
 
 ![Rating Analysis](data/analysis/1_rating_analysis.png)
 
-**TMDB ↔ IMDb correlation: r = 0.898**
+**TMDB ↔ Letterboxd correlation: r = 0.705**
 
-The two platforms agree strongly — movies rated highly on TMDB tend to be rated highly on IMDb too. The rating distributions differ slightly: TMDB ratings cluster around 6.5–7.5 while IMDb ratings tend to be a bit lower (6.0–7.0), suggesting TMDB audiences rate more generously on average.
+The two platforms show a moderate-to-strong positive correlation. TMDB ratings (0–10 scale) were normalised by doubling the Letterboxd scale (0–5) for a fair comparison. Both distributions cluster around the mid-range, though TMDB tends to skew slightly higher — suggesting TMDB's general audience rates more generously than Letterboxd's dedicated cinephile community.
 
 ---
 
@@ -39,9 +38,9 @@ The two platforms agree strongly — movies rated highly on TMDB tend to be rate
 
 ![Genre Analysis](data/analysis/2_genre_analysis.png)
 
-- **Most common genre:** Thriller, followed by Action and Drama — reflecting the blockbuster-heavy "popular movies" sample.
-- **Highest-rated genre (IMDb):** Fantasy movies averaged the highest IMDb scores among genres with ≥3 representatives.
-- Action and Adventure dominate frequency but sit closer to the mid-range for average ratings.
+- **Most common genre:** Drama, followed by Action and Thriller — reflecting the blockbuster-heavy "popular movies" sample.
+- **Highest-rated genre (Letterboxd):** Animation averaged the highest Letterboxd scores among genres with ≥3 representatives, driven by high-quality franchise entries.
+- Action and Thriller dominate frequency but sit near the mid-range for average ratings.
 
 ---
 
@@ -49,9 +48,9 @@ The two platforms agree strongly — movies rated highly on TMDB tend to be rate
 
 ![Financial Analysis](data/analysis/3_financial_analysis.png)
 
-- **Budget ↔ Revenue correlation: r = 0.614** — a moderate positive relationship. Bigger budgets generally earn more, but not reliably; several high-budget films underperformed.
-- **Most profitable movie:** Spider-Man: No Way Home, which earned far above its production budget.
-- A cluster of mid-budget films ($50M–$100M) achieved outsized returns, suggesting efficient production spending can outperform mega-budget productions.
+- **Budget ↔ Revenue correlation: r = 0.62** — a moderate positive relationship. Bigger budgets generally earn more, but not reliably.
+- **Most profitable movie:** Zootopia 2, which earned far above its production budget.
+- A cluster of mid-budget films achieved outsized returns, suggesting efficient production spending can outperform mega-budget productions.
 
 ---
 
@@ -60,18 +59,18 @@ The two platforms agree strongly — movies rated highly on TMDB tend to be rate
 ![Temporal Analysis](data/analysis/4_temporal_analysis.png)
 
 - The dataset is naturally concentrated around 2024–2026, reflecting TMDB's "popular" ranking.
-- **Best-rated year (avg IMDb):** 2014 — the few older classics in the dataset (e.g., Interstellar, Spider-Man: No Way Home) pull up historical years.
-- Recent releases (2025–2026) have lower average ratings, partly because IMDb ratings stabilise over time as more viewers vote.
+- **Best-rated year (avg Letterboxd):** 2014 — the few older classics in the dataset (e.g., Interstellar) pull up historical years.
+- Recent releases (2025–2026) have lower average ratings, partly because Letterboxd ratings stabilise over time as more viewers watch and vote.
 
 ---
 
 ## 3. Interesting Insights
 
-1. **Ratings convergence:** The 0.898 correlation between TMDB and IMDb is higher than expected given the different user bases. Both platforms appear to reflect genuine quality signals rather than platform-specific biases.
+1. **Letterboxd vs TMDB:** The 0.705 correlation is lower than expected, suggesting Letterboxd's cinephile community rates more critically — especially penalising mainstream blockbusters that casual TMDB audiences score generously.
 
-2. **The blockbuster paradox:** The highest-budget movies don't always have the highest ratings. The most profitable movies also tend to be well-rated, but mid-budget films often achieve better ROI than the mega-productions.
+2. **Animation overperforms:** Despite being less frequent than Drama or Action, Animation films score highest on Letterboxd. This likely reflects a selection effect — only the most anticipated animated films make the "popular" list.
 
-3. **Fantasy outperforms its frequency:** Despite being less common than Action or Thriller, Fantasy films average higher IMDb ratings — possibly because a dedicated fanbase rates more enthusiastically.
+3. **The profitability gap:** The most profitable movies aren't always the highest-rated. Zootopia 2 topped profitability but mid-range Letterboxd scores, suggesting box office success is driven by franchise IP rather than quality.
 
 ---
 
@@ -79,17 +78,17 @@ The two platforms agree strongly — movies rated highly on TMDB tend to be rate
 
 | Challenge | Solution |
 |-----------|----------|
-| IMDb blocked scraping via AWS WAF (HTTP 202 challenge) | Used OMDb API as a compliant fallback — same fields, official API |
-| 11 movies had no IMDb rating | These are very recent/unreleased titles; kept rows, treated as missing |
-| Budget/revenue missing for 21 movies (TMDB stores `0` for undisclosed) | Converted zeros to `NaN`; financial analysis limited to 29 movies with real data |
-| TMDB genres returned as a list | Flattened to comma-separated strings for CSV compatibility |
+| Letterboxd robots.txt uses inline comments, causing Python's `RobotFileParser` to return false negatives | Manually parsed the robots.txt, stripping inline comments before checking `/film/` disallow rules |
+| Title-to-slug conversion fails for special characters and sequels (e.g. "xXx") | Implemented regex-based slugification; failed lookups are logged and treated as missing |
+| Budget/revenue missing for ~27 movies (TMDB stores `0` for undisclosed) | Converted zeros to `NaN`; financial analysis limited to 23 movies with real data |
+| Letterboxd rating scale (0–5) differs from TMDB (0–10) | Added a `letterboxd_rating_10` column (×2) for direct comparison; kept native scale for genre/temporal plots |
 
 ---
 
 ## 5. Limitations & Future Improvements
 
 - **Sample bias:** Dataset covers only TMDB's current "popular" list — not a representative cross-section of cinema history.
-- **IMDb scraping:** Direct HTML scraping of IMDb is blocked by AWS WAF. A future implementation could use Selenium/Playwright with headless browser rendering, or stick with the OMDb API.
-- **Metascore coverage:** Only 34/50 movies have a Metascore; many recent releases haven't been reviewed by enough critics yet.
+- **Slug ambiguity:** Letterboxd slugs derived from titles may land on the wrong film page for remakes or similarly-named movies. A more robust approach would verify the year on the scraped page.
+- **Letterboxd fan count:** Fan counts are approximate (e.g., "2.6K") due to Letterboxd's display format; precision is limited.
 - **Deeper text analysis:** Scraping and analysing user review text was out of scope but would add qualitative depth.
 - **Expanding the dataset:** Re-running with `num_items=200+` across multiple genre lists would give more statistically robust findings.
