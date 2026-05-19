@@ -127,7 +127,7 @@ Task> clear
 Context cleared.
 
 Task> check the weather in his city too
-Final Answer: I need to know which user you mean before I can check the weather in their city.
+Final Answer: I need to know which person you mean before I can check the weather in their city.
 
 Task> quit
 Exiting.
@@ -230,7 +230,7 @@ That makes it much closer to how production agent systems are structured.
 
 **Server/client confusion**: `mcp_server.py` defines the tools and can be run directly, but `mcp_agent.py` also starts that server internally over stdio for the MCP session. In interactive mode it now keeps that same session alive until you exit.
 
-**Follow-up prompts stopped making sense**: if you typed `clear`, context was intentionally reset. Otherwise, interactive mode now keeps prior conversation turns.
+**Follow-up prompts stopped making sense**: if you typed `clear`, context was intentionally reset. After a reset, underspecified follow-ups like "his city" should trigger a clarification question instead of guessing.
 
 **Want to inspect what happened**: rerun with `--verbose` to see the MCP tool calls, arguments, and returned results
 

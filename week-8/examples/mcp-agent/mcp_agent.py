@@ -15,6 +15,12 @@ SYSTEM_PROMPT = """You are an assistant that can use MCP tools exposed by an ext
 Use the available tools when they help answer the user accurately.
 Do not invent tool outputs.
 After tool results are available, produce a concise final answer.
+
+Important conversation rules:
+- If the user uses a reference like "his city", "her account", "that user", or "their weather", only resolve it from the current conversation history.
+- If the relevant person or entity is not clearly available in the current conversation history, ask a brief clarifying question instead of guessing.
+- Never infer a hidden user after the context has been reset or cleared.
+- Do not call tools with placeholder values such as "user", "that user", or similar invented stand-ins.
 """
 
 
@@ -77,6 +83,12 @@ class MCPReActAgent:
         messages: list[dict[str, Any]],
         task: str,
     ) -> MCPAgentResult:
+        if self._needs_missing_context_clarification(task, messages):
+            final_answer = self._build_missing_context_message(task)
+            messages.append({"role": "user", "content": task})
+            messages.append({"role": "assistant", "content": final_answer})
+            return MCPAgentResult(final_answer=final_answer, tool_calls=[])
+
         messages.append({"role": "user", "content": task})
         tool_calls: list[MCPToolCall] = []
 
@@ -108,6 +120,13 @@ class MCPReActAgent:
                 tool_name = function_data["name"]
                 arguments = json.loads(function_data.get("arguments", "{}"))
 
+                if self._has_placeholder_arguments(arguments):
+                    final_answer = (
+                        "I need a specific username or clearer context before I can use that tool."
+                    )
+                    messages.append({"role": "assistant", "content": final_answer})
+                    return MCPAgentResult(final_answer=final_answer, tool_calls=tool_calls)
+
                 tool_result = await session.call_tool(tool_name, arguments=arguments)
                 normalized_result = self._normalize_tool_result(tool_result)
 
@@ -128,6 +147,55 @@ class MCPReActAgent:
                 )
 
         raise RuntimeError("Agent exceeded max_turns without producing a final answer.")
+
+    @staticmethod
+    def _needs_missing_context_clarification(task: str, messages: list[dict[str, Any]]) -> bool:
+        normalized_task = task.strip().lower()
+        reference_markers = [
+            "his ",
+            "her ",
+            "their ",
+            "that user",
+            "that person",
+            "this user",
+            "this person",
+        ]
+        if not any(marker in normalized_task for marker in reference_markers):
+            return False
+
+        prior_user_messages = [
+            message.get("content", "")
+            for message in messages
+            if message.get("role") == "user"
+        ]
+        return len(prior_user_messages) == 0
+
+    @staticmethod
+    def _build_missing_context_message(task: str) -> str:
+        normalized_task = task.strip().lower()
+        if "weather" in normalized_task:
+            return "I need to know which person you mean before I can check the weather in their city."
+        if "account" in normalized_task:
+            return "I need to know which person you mean before I can summarize their account."
+        return "I need a bit more context about which person or item you mean before I continue."
+
+    @staticmethod
+    def _has_placeholder_arguments(arguments: dict[str, Any]) -> bool:
+        placeholder_values = {
+            "user",
+            "that user",
+            "this user",
+            "person",
+            "that person",
+            "this person",
+            "their city",
+            "his city",
+            "her city",
+        }
+        for value in arguments.values():
+            if isinstance(value, str) and value.strip().lower() in placeholder_values:
+                return True
+        return False
 
     @staticmethod
     def _initial_messages() -> list[dict[str, Any]]:
