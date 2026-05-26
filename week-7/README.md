@@ -256,7 +256,7 @@ Benefits: Smaller images, faster deployments, better security
 [Using Docker to Deploy an R Plumber API](https://medium.com/tmobile-tech/using-docker-to-deploy-an-r-plumber-api-863ccf91516d) - T-Mobile Tech, real-world example of deploying ML models with Docker
   - [GitHub Repository](https://github.com/tmobile/r-tensorflow-api) - Complete working example
 
-[Technical Debt for Data Scientists](https://www.gordonshot well.com/blog/technical-debt-data-science/) - Gordon Shotwell
+[Technical Debt for Data Scientists](https://www.gordonshotwell.com/blog/technical-debt-data-science/) - Gordon Shotwell
 
 [Hiring a Data Scientist: The Good, The Bad and The Ugly](https://www.forbes.com/sites/forbestechcouncil/2019/03/14/hiring-a-data-scientist-the-good-the-bad-and-the-ugly/) - Nisha Talagala, Forbes
 

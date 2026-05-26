@@ -11,7 +11,7 @@ This week brings together everything you've learned into production-ready system
 
 [The Art of Giving and Receiving Code Reviews (Gracefully)](https://www.alexandra-hill.com/2018/06/25/the-art-of-giving-and-receiving-code-reviews/) - Alex Hill
 
-[Technical Debt for Data Scientists](https://www.gordonshot well.com/blog/technical-debt-data-science/) - Gordon Shotwell
+[Technical Debt for Data Scientists](https://www.gordonshotwell.com/blog/technical-debt-data-science/) - Gordon Shotwell
 
 [Hiring a Data Scientist: The Good, The Bad and The Ugly](https://www.forbes.com/sites/forbestechcouncil/2019/03/14/hiring-a-data-scientist-the-good-the-bad-and-the-ugly/) - Nisha Talagala, Forbes
 
